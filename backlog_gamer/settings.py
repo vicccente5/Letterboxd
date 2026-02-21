@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'core',  # Nuestra app para el backlog de juegos
 ]
 
 MIDDLEWARE = [
@@ -74,8 +75,12 @@ WSGI_APPLICATION = 'backlog_gamer.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'postgres',
+        'USER': 'postgres.hxgewarawsnhttcxpnhw',
+        'PASSWORD': 'UbR4ckV6FznI2Kzg',  # Password de Supabase
+        'HOST': 'aws-1-us-east-2.pooler.supabase.com',
+        'PORT': '5432',
     }
 }
 
@@ -115,3 +120,11 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+LOGIN_REDIRECT_URL = '/profile/'
+LOGIN_URL = '/accounts/login/'
+LOGOUT_REDIRECT_URL = '/'
+
+# IGDB / Twitch API Settings
+TWITCH_CLIENT_ID = 'j1av25mu93l1ktdnp2ug8xy3jaxako'
+TWITCH_CLIENT_SECRET = 'zuwm2vmpyypzah09ugyxsrdc8iu4i4'

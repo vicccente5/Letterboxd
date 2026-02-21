@@ -1,0 +1,277 @@
+{% extends 'core/base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div style="text-align: center; margin-bottom: 2rem;">
+    <h1 style="font-size: 2.5rem; margin-bottom: 1rem; color: #00ff88;">
+        🎮 Detalles del Juego {{ game_id }}
+    </h1>
+</div>
+
+<!-- Cabecera del Juego -->
+<div class="card" style="margin-bottom: 2rem; background: linear-gradient(135deg, rgba(0,255,136,0.1), rgba(0,170,255,0.1));">
+    <div style="display: grid; grid-template-columns: 300px 1fr; gap: 2rem; align-items: center;">
+        <div>
+            {% if game_details and game_details|length > 0 %}
+                {% with game=game_details.0 %}
+                    {% if game.cover %}
+                        <img src="https:{{ game.cover.url }}" alt="{{ game.name }}" 
+                             style="width: 100%; height: 400px; object-fit: cover; border-radius: 15px;">
+                    {% else %}
+                        <div style="width: 100%; height: 400px; background: #333; border-radius: 15px; display: flex; align-items: center; justify-content: center; color: #666; font-size: 1.2rem;">
+                            📸 Sin Carátula
+                        </div>
+                    {% endif %}
+                    <h1 style="font-size: 2.5rem; margin-bottom: 1rem;">{{ game.name }}</h1>
+                    <div style="display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
+                        {% for genre in game.genres %}
+                            <span style="background: #444; padding: 0.5rem 1rem; border-radius: 20px;">{{ genre.name }}</span>
+                        {% endfor %}
+                    </div>
+                    <p style="font-size: 1.1rem; color: #ccc; margin-bottom: 1rem;">
+                        {% if game.first_release_date %}
+                            <strong>Fecha de lanzamiento:</strong> {{ game.first_release_date|date:"Y" }} • 
+                        {% endif %}
+                        {% if game.involved_companies %}
+                            <strong>Desarrollador:</strong> 
+                            {% for company in game.involved_companies %}
+                                {% if company.developer %}
+                                    {{ company.company.name }}{% if not forloop.last %}, {% endif %}
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                    </p>
+                    {% if game.rating %}
+                        <p style="font-size: 1.1rem; color: #00ff88; margin-bottom: 1rem;">
+                            <strong>Rating IGDB:</strong> ⭐ {{ game.rating|floatformat:1 }}/100
+                        </p>
+                    {% endif %}
+                    {% if game.summary %}
+                        <p style="line-height: 1.6; color: #ddd;">
+                            {{ game.summary }}
+                        </p>
+                    {% endif %}
+                {% endwith %}
+            {% else %}
+                <h1 style="font-size: 2.5rem; margin-bottom: 1rem;">Juego #{{ game_id }}</h1>
+                <p style="color: #999;">Cargando información del juego...</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Botón de Acción -->
+<div style="text-align: center; margin-bottom: 3rem;">
+    {% if user.is_authenticated %}
+        <button class="btn" style="font-size: 1.2rem; padding: 1rem 2rem; background: #444; color: #fff;" onclick="showSectionSelector()">
+            📂 Organizar en colección
+        </button>
+    {% else %}
+        <a href="{% url 'login' %}?next={% url 'game_detail' game_id %}" class="btn" style="font-size: 1.2rem; padding: 1rem 2rem;">
+            🔐 Inicia sesión para añadir a tu colección
+        </a>
+    {% endif %}
+</div>
+
+<!-- Mensajes de Django -->
+{% if messages %}
+    <div style="position: fixed; top: 20px; right: 20px; z-index: 3000; max-width: 400px;">
+        {% for message in messages %}
+            <div style="padding: 1rem; margin-bottom: 0.5rem; border-radius: 8px; 
+                 {% if message.tags == 'error' %}background: #ff6b6b; color: white;{% endif %}
+                 {% if message.tags == 'success' %}background: #00ff88; color: black;{% endif %}
+                 {% if message.tags == 'warning' %}background: #ffa726; color: black;{% endif %}
+                 {% if message.tags == 'info' %}background: #00aaff; color: white;{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    </div>
+    
+    <script>
+        // Auto-ocultar mensajes después de 5 segundos
+        setTimeout(function() {
+            const messagesDiv = document.querySelector('div[style*="position: fixed"]');
+            if (messagesDiv) {
+                messagesDiv.style.display = 'none';
+            }
+        }, 5000);
+    </script>
+{% endif %}
+
+<!-- Modal para agregar juego (inicialmente oculto) -->
+<div id="addModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; align-items: center; justify-content: center;">
+    <div class="card" style="max-width: 500px; width: 90%;">
+        <h2 style="margin-bottom: 1.5rem; color: #00ff88;">Agregar a tu Colección</h2>
+        <form method="post" action="{% url 'add_game_to_backlog' game_id %}">
+            {% csrf_token %}
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; margin-bottom: 0.5rem;">Estado:</label>
+                {{ form.estado }}
+            </div>
+            
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; margin-bottom: 0.5rem;">Nota (1-5):</label>
+                {{ form.nota }}
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; margin-bottom: 0.5rem;">Reseña (opcional):</label>
+                {{ form.resena }}
+            </div>
+            
+            <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                <button type="button" class="btn" style="background: #666;" onclick="hideAddModal()">Cancelar</button>
+                <button type="submit" class="btn">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal para elegir sección (inicialmente oculto) -->
+<div id="sectionModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; align-items: center; justify-content: center;">
+    <div class="card" style="max-width: 500px; width: 90%;">
+        <h2 style="margin-bottom: 1.5rem; color: #00aaff;">📂 ¿Dónde agregar este juego?</h2>
+        <form method="post" action="{% url 'add_game_to_backlog' game_id %}">
+            {% csrf_token %}
+            <input type="hidden" name="estado" value="PENDIENTE">
+            
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-size: 1.1rem; color: #ccc;">Elige una sección de tu colección:</label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 0.5rem;">
+                    <button type="submit" name="estado" value="TERMINADO" class="btn" style="background: #00ff88; color: #000; padding: 1rem;">
+                        ✅ Juegos Terminados
+                    </button>
+                    <button type="submit" name="estado" value="JUGANDO" class="btn" style="background: #00aaff; color: #fff; padding: 1rem;">
+                        🎮 Jugando Actualmente
+                    </button>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <button type="submit" name="estado" value="PENDIENTE" class="btn" style="background: #ffa726; color: #000; padding: 1rem;">
+                        📋 Mi Backlog (Pendientes)
+                    </button>
+                    <button type="submit" name="estado" value="ABANDONADO" class="btn" style="background: #ff6b6b; color: #fff; padding: 1rem;">
+                        ❌ Juegos Abandonados
+                    </button>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                <button type="button" class="btn" style="background: #666;" onclick="hideSectionModal()">Cancelar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Reseñas de la Comunidad -->
+<section>
+    <h2 style="margin-bottom: 1.5rem; color: #00ff88;">💬 Reseñas de la Comunidad</h2>
+    <div class="grid grid-3">
+        {% for review in game_reviews %}
+            <div class="card">
+                <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+                    <div style="width: 40px; height: 40px; background: #444; border-radius: 50%; margin-right: 1rem; display: flex; align-items: center; justify-content: center; color: #fff;">
+                        {{ review.usuario.username.0|upper }}
+                    </div>
+                    <div>
+                        <strong style="color: #00ff88;">{{ review.usuario.username }}</strong>
+                        <p style="color: #999; font-size: 0.9rem; margin: 0;">{{ review.fecha_modificacion|timesince }} atrás</p>
+                    </div>
+                </div>
+                <div style="margin-bottom: 0.5rem;">
+                    {% if review.estado == 'TERMINADO' %}✅ Terminado{% endif %}
+                    {% if review.estado == 'JUGANDO' %}🎮 Jugando{% endif %}
+                    {% if review.estado == 'ABANDONADO' %}❌ Abandonado{% endif %}
+                    {% if review.estado == 'PENDIENTE' %}📋 Pendiente{% endif %}
+                </div>
+                {% if review.nota %}
+                    <div style="margin-bottom: 0.5rem;">{% for i in ''|center:review.nota %}⭐{% endfor %}</div>
+                {% endif %}
+                {% if review.resena %}
+                    <p style="line-height: 1.5;">
+                        {{ review.resena }}
+                    </p>
+                {% endif %}
+            </div>
+        {% empty %}
+            <div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: #666;">
+                <p style="font-size: 1.2rem;">No hay reseñas aún</p>
+                <p style="margin-top: 0.5rem;">¡Sé el primero en compartir tu opinión sobre este juego!</p>
+            </div>
+        {% endfor %}
+    </div>
+</section>
+
+<script>
+// Funciones para manejar modales
+function showAddModal() {
+    const modal = document.getElementById('addModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        console.log('Modal para agregar juego abierto');
+    }
+}
+
+function hideAddModal() {
+    const modal = document.getElementById('addModal');
+    if (modal) {
+        modal.style.display = 'none';
+        console.log('Modal para agregar juego cerrado');
+    }
+}
+
+function showSectionSelector() {
+    const modal = document.getElementById('sectionModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        console.log('Modal para elegir sección abierto');
+    }
+}
+
+function hideSectionModal() {
+    const modal = document.getElementById('sectionModal');
+    if (modal) {
+        modal.style.display = 'none';
+        console.log('Modal para elegir sección cerrado');
+    }
+}
+
+// Configurar event listeners cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Página cargada, configurando event listeners');
+    
+    // Event listeners para cerrar modales al hacer clic fuera
+    const addModal = document.getElementById('addModal');
+    const sectionModal = document.getElementById('sectionModal');
+    
+    if (addModal) {
+        addModal.addEventListener('click', function(e) {
+            if (e.target === addModal) {
+                hideAddModal();
+                console.log('Clic en el modal para cerrar');
+            }
+        });
+    }
+    
+    if (sectionModal) {
+        sectionModal.addEventListener('click', function(e) {
+            if (e.target === sectionModal) {
+                hideSectionModal();
+                console.log('Clic en el modal de sección para cerrar');
+            }
+        });
+    }
+});
+
+// Auto-ocultar mensajes después de 5 segundos
+{% if messages %}
+    setTimeout(function() {
+        const messagesDiv = document.querySelector('div[style*="position: fixed"]');
+        if (messagesDiv) {
+            messagesDiv.style.display = 'none';
+            console.log('Mensajes ocultos automáticamente');
+        }
+    }, 5000);
+{% endif %}
+</script>
+{% endblock %}

@@ -1,0 +1,51 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Iniciar Sesión - Backlog Gamer{% endblock %}
+
+{% block content %}
+<div style="max-width: 400px; margin: 3rem auto; padding: 0 2rem;">
+    <div class="card">
+        <h1 style="text-align: center; margin-bottom: 2rem; color: #00ff88;">
+            🎮 Iniciar Sesión
+        </h1>
+        
+        {% if messages %}
+            {% for message in messages %}
+                <div style="padding: 1rem; margin-bottom: 1rem; border-radius: 8px; 
+                     {% if message.tags == 'error' %}background: #ff6b6b; color: white;{% endif %}
+                     {% if message.tags == 'success' %}background: #00ff88; color: black;{% endif %}
+                     {% if message.tags == 'warning' %}background: #ffa726; color: black;{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+        
+        <form method="post">
+            {% csrf_token %}
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; margin-bottom: 0.5rem; color: #ccc;">Usuario:</label>
+                <input type="text" name="username" required
+                       style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid #444; 
+                              background: #333; color: #fff; font-size: 1rem;">
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; margin-bottom: 0.5rem; color: #ccc;">Contraseña:</label>
+                <input type="password" name="password" required
+                       style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid #444; 
+                              background: #333; color: #fff; font-size: 1rem;">
+            </div>
+            
+            <div style="text-align: center;">
+                <button type="submit" class="btn" style="width: 100%; padding: 1rem;">
+                    Iniciar Sesión
+                </button>
+            </div>
+        </form>
+        
+        <div style="text-align: center; margin-top: 2rem; color: #999;">
+            <p>¿No tienes cuenta? <a href="/admin/" style="color: #00ff88;">Regístrate aquí</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}

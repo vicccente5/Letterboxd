@@ -1,0 +1,202 @@
+{% extends 'core/base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="search-container">
+    <h1 style="font-size: 3rem; margin-bottom: 1rem; background: linear-gradient(45deg, #00ff88, #00aaff); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+        Tu Biblioteca de Juegos
+    </h1>
+    <p style="font-size: 1.2rem; color: #999; margin-bottom: 2rem;">
+        Descubre, registra y comparte tu experiencia gaming
+    </p>
+    
+    <form id="searchForm" style="margin-bottom: 1rem;">
+        <input 
+            type="text" 
+            id="searchInput"
+            class="search-bar" 
+            placeholder="🔍 Busca un juego para agregar a tu backlog..."
+            style="margin-bottom: 1rem;"
+        >
+        <button type="submit" class="btn">Buscar</button>
+    </form>
+    
+    <!-- Resultados de búsqueda -->
+    <div id="searchResults" style="display: none; margin-bottom: 2rem;">
+        <h3 style="margin-bottom: 1rem; color: #00ff88;">🔍 Resultados de Búsqueda</h3>
+        <div id="searchResultsGrid" class="grid grid-4"></div>
+    </div>
+</div>
+
+<!-- Tendencias -->
+<section style="margin-bottom: 3rem;">
+    <h2 style="margin-bottom: 1.5rem; color: #00ff88;">🔥 Juegos en Tendencia</h2>
+    <div class="grid grid-4">
+        {% for game in trending_games %}
+            <div class="card" style="text-align: center; cursor: pointer;" onclick="window.location.href='/game/{{ game.id }}/'">
+                {% if game.cover %}
+                    <img src="https:{{ game.cover.url }}" alt="{{ game.name }}" 
+                         style="width: 100%; height: 200px; object-fit: cover; border-radius: 10px; margin-bottom: 1rem;">
+                {% else %}
+                    <div style="width: 100%; height: 200px; background: #333; border-radius: 10px; margin-bottom: 1rem; display: flex; align-items: center; justify-content: center; color: #666;">
+                        📸 Sin Carátula
+                    </div>
+                {% endif %}
+                <h3>{{ game.name }}</h3>
+                <p style="color: #999; font-size: 0.9rem;">
+                    {% for genre in game.genres %}{{ genre.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                </p>
+                {% if game.total_rating_count %}
+                    <p style="color: #ff6b6b; font-size: 0.8rem; margin-bottom: 0.5rem;">🔥 Popularidad: {{ game.total_rating_count }} valoraciones</p>
+                {% endif %}
+                {% if game.aggregated_rating %}
+                    <p style="color: #00ff88; font-size: 0.9rem;">⭐ Rating IGDB: {{ game.aggregated_rating|floatformat:1 }}/100</p>
+                {% elif game.rating %}
+                    <p style="color: #00ff88; font-size: 0.9rem;">⭐ Rating: {{ game.rating|floatformat:1 }}/100</p>
+                {% endif %}
+            </div>
+        {% empty %}
+            <div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: #666;">
+                <p style="font-size: 1.2rem;">Cargando juegos en tendencia...</p>
+            </div>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- Actividad Reciente -->
+<section>
+    <h2 style="margin-bottom: 1.5rem; color: #00ff88;">⚡ Actividad Reciente de la Comunidad</h2>
+    <div class="grid grid-3">
+        {% for activity in recent_activity %}
+            <div class="card">
+                <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+                    <div style="width: 40px; height: 40px; background: #444; border-radius: 50%; margin-right: 1rem; display: flex; align-items: center; justify-content: center; color: #fff;">
+                        {{ activity.usuario.username.0|upper }}
+                    </div>
+                    <div>
+                        <strong style="color: #00ff88;">{{ activity.usuario.username }}</strong>
+                        <p style="color: #999; font-size: 0.9rem; margin: 0;">{{ activity.fecha_modificacion|timesince }} atrás</p>
+                    </div>
+                </div>
+                <p><strong>Juego #{{ activity.game_id }}</strong> - 
+                   {% if activity.estado == 'TERMINADO' %}✅ Terminado{% endif %}
+                   {% if activity.estado == 'JUGANDO' %}🎮 Jugando{% endif %}
+                   {% if activity.estado == 'ABANDONADO' %}❌ Abandonado{% endif %}
+                   {% if activity.estado == 'PENDIENTE' %}📋 Pendiente{% endif %}
+                </p>
+                {% if activity.nota %}
+                    <p style="margin: 0.5rem 0;">{% for i in ''|center:activity.nota %}⭐{% endfor %}</p>
+                {% endif %}
+                {% if activity.resena %}
+                    <p style="color: #999; font-size: 0.9rem; margin-top: 0.5rem;">
+                        "{{ activity.resena|truncatewords:10 }}"
+                    </p>
+                {% endif %}
+            </div>
+        {% empty %}
+            <div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: #666;">
+                <p style="font-size: 1.2rem;">No hay actividad reciente</p>
+                <p style="margin-top: 0.5rem;">¡Sé el primero en agregar juegos!</p>
+            </div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchForm = document.getElementById('searchForm');
+    const searchInput = document.getElementById('searchInput');
+    const searchResults = document.getElementById('searchResults');
+    const searchResultsGrid = document.getElementById('searchResultsGrid');
+    
+    searchForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        performSearch();
+    });
+    
+    // Búsqueda en tiempo real mientras escribe
+    let searchTimeout;
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        const query = this.value.trim();
+        
+        if (query.length < 2) {
+            searchResults.style.display = 'none';
+            return;
+        }
+        
+        // Esperar 500ms después de que el usuario deje de escribir
+        searchTimeout = setTimeout(() => {
+            performSearch();
+        }, 500);
+    });
+    
+    function performSearch() {
+        const query = searchInput.value.trim();
+        
+        if (query.length < 2) {
+            searchResults.style.display = 'none';
+            return;
+        }
+        
+        // Mostrar indicador de carga
+        searchResults.style.display = 'block';
+        searchResultsGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: #999;">🔍 Buscando juegos...</div>';
+        
+        // Realizar búsqueda AJAX
+        fetch(`/api/search/?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.games && data.games.length > 0) {
+                    displaySearchResults(data.games);
+                } else {
+                    searchResultsGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: #666;">No se encontraron juegos. Intenta con otro término.</div>';
+                }
+            })
+            .catch(error => {
+                console.error('Error en búsqueda:', error);
+                searchResultsGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: #ff6b6b;">Error al buscar juegos. Intenta nuevamente.</div>';
+            });
+    }
+    
+    function displaySearchResults(games) {
+        searchResultsGrid.innerHTML = '';
+        
+        games.forEach(game => {
+            const gameCard = document.createElement('div');
+            gameCard.className = 'card';
+            gameCard.style.textAlign = 'center';
+            gameCard.style.cursor = 'pointer';
+            
+            const coverHtml = game.cover 
+                ? `<img src="https:${game.cover.url}" alt="${game.name}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 10px; margin-bottom: 1rem;">`
+                : `<div style="width: 100%; height: 200px; background: #333; border-radius: 10px; margin-bottom: 1rem; display: flex; align-items: center; justify-content: center; color: #666;">📸 Sin Carátula</div>`;
+            
+            const genresHtml = game.genres 
+                ? game.genres.map(g => g.name).join(', ')
+                : 'Sin género';
+            
+            const ratingHtml = game.rating 
+                ? `<p style="color: #00ff88; font-size: 0.9rem;">⭐ ${game.rating.toFixed(1)}/100</p>`
+                : '';
+            
+            gameCard.innerHTML = `
+                ${coverHtml}
+                <h3>${game.name}</h3>
+                <p style="color: #999; font-size: 0.9rem;">${genresHtml}</p>
+                ${ratingHtml}
+            `;
+            
+            gameCard.onclick = function() {
+                window.location.href = `/game/${game.id}/`;
+            };
+            
+            searchResultsGrid.appendChild(gameCard);
+        });
+    }
+});
+</script>
+{% endblock %}

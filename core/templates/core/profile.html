@@ -1,0 +1,187 @@
+{% extends 'core/base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div style="text-align: center; margin-bottom: 2rem;">
+    <h1 style="font-size: 2.5rem; margin-bottom: 1rem; color: #00ff88;">
+        🎮 Mi Backlog Personal
+    </h1>
+    <p style="color: #999; font-size: 1.1rem;">Tu biblioteca personal de juegos</p>
+</div>
+
+<!-- Estadísticas -->
+<div class="stats-container">
+    <div class="stat-card">
+        <div class="stat-number">{{ stats.terminados }}</div>
+        <div class="stat-label">✅ Terminados</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ stats.jugando }}</div>
+        <div class="stat-label">🎮 Jugando</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ stats.abandonados }}</div>
+        <div class="stat-label">❌ Abandonados</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ stats.pendientes }}</div>
+        <div class="stat-label">📋 Pendientes</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ stats.total }}</div>
+        <div class="stat-label">📚 Total</div>
+    </div>
+</div>
+
+<!-- Pestañas de navegación -->
+<div style="margin-bottom: 2rem;">
+    <a href="{% url 'profile_terminados' %}" class="btn" style="background: #00ff88; color: #000; margin-right: 0.5rem; padding: 0.75rem 1.5rem; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; text-decoration: none;">
+        ✅ Ver Terminados ({{ stats.terminados }})
+    </a>
+    <a href="{% url 'profile_jugando' %}" class="btn" style="background: #444; color: #fff; margin-right: 0.5rem; padding: 0.75rem 1.5rem; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; text-decoration: none;">
+        🎮 Ver Jugando ({{ stats.jugando }})
+    </a>
+    <a href="{% url 'profile_pendientes' %}" class="btn" style="background: #444; color: #fff; margin-right: 0.5rem; padding: 0.75rem 1.5rem; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; text-decoration: none;">
+        📋 Ver Backlog ({{ stats.pendientes }})
+    </a>
+    <a href="{% url 'profile_abandonados' %}" class="btn" style="background: #444; color: #fff; margin-right: 0.5rem; padding: 0.75rem 1.5rem; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; text-decoration: none;">
+        ❌ Ver Abandonados ({{ stats.abandonados }})
+    </a>
+</div>
+
+<!-- Contenido de las pestañas -->
+<div id="tab-content">
+    <!-- Tab: Terminados -->
+    <div id="terminados-tab" class="tab-content">
+        <h3 style="margin-bottom: 1.5rem; color: #00ff88;">✅ Juegos Terminados</h3>
+        <div class="grid grid-4">
+            {% for juego in juegos_usuario %}
+                {% if juego.estado == 'TERMINADO' %}
+                    <div class="card" style="text-align: center; cursor: pointer;" onclick="window.location.href='/game/{{ juego.game_id }}/'">
+                        <div style="width: 100%; height: 200px; background: #333; border-radius: 10px; margin-bottom: 1rem; display: flex; align-items: center; justify-content: center; color: #666;">
+                            📸 ID: {{ juego.game_id }}
+                        </div>
+                        <h4>Juego #{{ juego.game_id }}</h4>
+                        {% if juego.nota %}
+                            <div style="margin: 0.5rem 0;">{% for i in ''|center:juego.nota %}⭐{% endfor %}</div>
+                        {% endif %}
+                        <p style="color: #999; font-size: 0.9rem;">{{ juego.fecha_modificacion|date:"d M Y" }}</p>
+                        {% if juego.resena %}
+                            <p style="color: #ccc; font-size: 0.8rem; margin-top: 0.5rem; line-height: 1.3;">
+                                "{{ juego.resena|truncatewords:10 }}"
+                            </p>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            {% empty %}
+                <div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: #666;">
+                    <p style="font-size: 1.2rem;">No tienes juegos terminados aún</p>
+                    <p style="margin-top: 0.5rem;">¡Empieza a jugar y registra tus primeros juegos!</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Tab: Jugando -->
+    <div id="jugando-tab" class="tab-content" style="display: none;">
+        <h3 style="margin-bottom: 1.5rem; color: #00ff88;">🎮 Jugando Actualmente</h3>
+        <div class="grid grid-4">
+            {% for juego in juegos_usuario %}
+                {% if juego.estado == 'JUGANDO' %}
+                    <div class="card" style="text-align: center;">
+                        <div style="width: 100%; height: 200px; background: #333; border-radius: 10px; margin-bottom: 1rem; display: flex; align-items: center; justify-content: center; color: #666;">
+                            📸 ID: {{ juego.game_id }}
+                        </div>
+                        <h4>Juego #{{ juego.game_id }}</h4>
+                        <p style="color: #999; font-size: 0.9rem;">{{ juego.fecha_modificacion|date:"d M Y" }}</p>
+                        {% if juego.resena %}
+                            <p style="color: #ccc; font-size: 0.8rem; margin-top: 0.5rem; line-height: 1.3;">
+                                "{{ juego.resena|truncatewords:10 }}"
+                            </p>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            {% empty %}
+                <div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: #666;">
+                    <p style="font-size: 1.2rem;">No estás jugando nada actualmente</p>
+                    <p style="margin-top: 0.5rem;">¡Busca un juego y empieza a jugar!</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Tab: Pendientes (Backlog) -->
+    <div id="pendientes-tab" class="tab-content" style="display: none;">
+        <h3 style="margin-bottom: 1.5rem; color: #00ff88;">📋 Mi Backlog (Pendientes)</h3>
+        <div class="grid grid-4">
+            {% for juego in juegos_usuario %}
+                {% if juego.estado == 'PENDIENTE' %}
+                    <div class="card" style="text-align: center;">
+                        <div style="width: 100%; height: 200px; background: #333; border-radius: 10px; margin-bottom: 1rem; display: flex; align-items: center; justify-content: center; color: #666;">
+                            📸 ID: {{ juego.game_id }}
+                        </div>
+                        <h4>Juego #{{ juego.game_id }}</h4>
+                        <p style="color: #999; font-size: 0.9rem;">{{ juego.fecha_creacion|date:"d M Y" }}</p>
+                    </div>
+                {% endif %}
+            {% empty %}
+                <div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: #666;">
+                    <p style="font-size: 1.2rem;">Tu backlog está vacío</p>
+                    <p style="margin-top: 0.5rem;">¡Agrega juegos a tu lista de deseos!</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Tab: Abandonados -->
+    <div id="abandonados-tab" class="tab-content" style="display: none;">
+        <h3 style="margin-bottom: 1.5rem; color: #00ff88;">❌ Juegos Abandonados</h3>
+        <div class="grid grid-4">
+            {% for juego in juegos_usuario %}
+                {% if juego.estado == 'ABANDONADO' %}
+                    <div class="card" style="text-align: center;">
+                        <div style="width: 100%; height: 200px; background: #333; border-radius: 10px; margin-bottom: 1rem; display: flex; align-items: center; justify-content: center; color: #666;">
+                            📸 ID: {{ juego.game_id }}
+                        </div>
+                        <h4>Juego #{{ juego.game_id }}</h4>
+                        <p style="color: #999; font-size: 0.9rem;">{{ juego.fecha_modificacion|date:"d M Y" }}</p>
+                        {% if juego.resena %}
+                            <p style="color: #ccc; font-size: 0.8rem; margin-top: 0.5rem; line-height: 1.3;">
+                                "{{ juego.resena|truncatewords:10 }}"
+                            </p>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            {% empty %}
+                <div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: #666;">
+                    <p style="font-size: 1.2rem;">No has abandonado ningún juego</p>
+                    <p style="margin-top: 0.5rem;">¡Eso es bueno! Sigue así 😊</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script>
+function showTab(tabName) {
+    // Ocultar todos los tabs
+    const tabs = document.querySelectorAll('.tab-content');
+    tabs.forEach(tab => tab.style.display = 'none');
+    
+    // Mostrar el tab seleccionado
+    document.getElementById(tabName + '-tab').style.display = 'block';
+    
+    // Actualizar botones
+    const buttons = document.querySelectorAll('.tab-btn');
+    buttons.forEach(btn => {
+        btn.style.background = '#444';
+        btn.style.color = '#fff';
+    });
+    
+    // Resaltar botón activo
+    event.target.style.background = '#00ff88';
+    event.target.style.color = '#000';
+}
+</script>
+{% endblock %}
